@@ -1,0 +1,50 @@
+- hosts: datanode
+  tasks:
+          - name: "Copying the hadoop software"
+            copy:
+                    dest: "/root/"
+                    src: "/root/hadoop-1.2.1-1.x86_64.rpm"
+
+          - name: "Copying the jdk software"
+            copy:
+                    dest: "/root/"
+                    src: "/root/jdk-8u171-linux-x64.rpm"
+          - block:
+
+            - name: "installing java..."
+              command: "rpm -q jdk1.8"
+              register: x
+              changed_when: false
+
+            rescue:
+            - command: "rpm -i jdk-8u171-linux-x64.rpm"
+              when: x.rc != 0
+          - block:
+
+            - name: "Installing the hadoop..."
+              command: "rpm -q hadoop"
+              register: y
+              changed_when: false
+
+
+            rescue:
+            - command: "rpm -i hadoop-1.2.1-1.x86_64.rpm --force"
+              when: y.rc != 0
+
+          - name: "create the directory ..."
+            file:
+                    state: directory
+                    path: "/dn1"
+          - name: "Configration of datanode of core file ..."
+            copy:
+                    dest: "/etc/hadoop/core-site.xml"
+                    src: "/root/all_hadoop_config_file_byansible/datanode/core-site.xml"
+
+          - name: "Configration of datanode of hdfs file ..."
+            copy:
+                    dest: "/etc/hadoop/hdfs-site.xml"
+                    src: "/root/all_hadoop_config_file_byansible/datanode/hdfs-site.xml"
+
+          - name: "datanide  starting ..."
+            command: "hadoop-daemon.sh start datanode"
+            ignore_errors: yes
